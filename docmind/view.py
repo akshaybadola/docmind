@@ -55,7 +55,7 @@ class GraphicsView(QGraphicsView):
     def dragLeaveEvent(self, event):
         self.dragOver = True
         self.update()
- 
+
     def dropEvent(self, event):
         self.dragOver = True
         self.mmap.drag_and_drop(
@@ -134,7 +134,7 @@ class GraphicsView(QGraphicsView):
                 item = self.itemAt(event.pos())
                 if isinstance(item, Shape) or isinstance(item, Thought):
                     item.mouseDoubleClickEvent(event)
-    
+
     def keyPressEvent(self, event):
         # I also want shift to show me an insert direction
         if event.key() == Qt.Key_Plus and event.modifiers() & Qt.ControlModifier:

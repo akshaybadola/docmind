@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsItem, QGraphicsDropShado
 # colors for each parent/child relationship, perhaps lighter?
 # Also, have the same level of line thickness for each member
 # of hierarchy
-from Thought import Thought
+from .thought import Thought
 
 # start_item, end_item are Thought instances
 class Arrow(QGraphicsLineItem):
@@ -68,7 +68,7 @@ class Arrow(QGraphicsLineItem):
 
         line = self.setLine(QLineF(en, st))
         line = self.line()
-        
+
         angle = math.acos(line.dx() / line.length())
         if line.dy() >= 0:
             angle = (math.pi * 2.0) - angle
@@ -118,7 +118,7 @@ class Link(QGraphicsLineItem):
         else:
             self.setPen(QPen(self.color, 2, Qt.SolidLine, Qt.RoundCap,
                              Qt.RoundJoin))
-     
+
     def setColor(self, color):
         if isinstance(color, str):
             if color == "red":
@@ -132,7 +132,7 @@ class Link(QGraphicsLineItem):
             self.color = QColor(*base_color)
         else:
             self.color = color
-            
+
     def boundingRect(self):
         extra = (self.pen().width() + 20) / 2.0
         p1 = self.line().p1()
@@ -165,9 +165,10 @@ class Link(QGraphicsLineItem):
         painter.setPen(pen)
         painter.setBrush(self.color)
 
-        # It actually should be the the nearest path between two QPainterPaths
-        # I think this code is trying to find the intersection between the line and
-        # the polygon, LOL
+        # NOTE: It actually should be the the nearest path between two
+        #       QPainterPaths. I think this code is trying to find the
+        #       intersection between the line and the polygon, LOL
+
         # startpos = myStartItem.pos()
         # endpos = myEndItem.pos()
         # p1 = ep.first() + ei.pos()
@@ -232,7 +233,7 @@ class Link(QGraphicsLineItem):
             en = self.mapFromItem(ei, ei.boundingRect().center())
         line = self.setLine(QLineF(en, st))
         line = self.line()
-        
+
         angle = math.acos(line.dx() / line.length())
         if line.dy() >= 0:
             angle = (math.pi * 2.0) - angle

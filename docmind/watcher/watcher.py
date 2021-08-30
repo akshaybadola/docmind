@@ -2,7 +2,6 @@ import os
 import glob
 import pickle
 import hashlib
-import numpy as np
 from shutil import copyfile
 from functools import reduce
 from collections import defaultdict
@@ -36,7 +35,7 @@ class Watcher(object):
 
         dd_files.update(zip(pdfs, [(i, j[0], j[1]) for i, j in zip(inodes, times)]))
         dd_nodes.update(zip(inodes, [(i, j[0], j[1]) for i, j in zip(pdfs, times)]))
-        
+
         return dd_files, dd_nodes
 
 
@@ -83,7 +82,7 @@ class Watcher(object):
             # What to do with deleted files?
             pass
 
-        
+
     def __md5(self, fname):
         hash_md5 = hashlib.md5()
         with open(fname, "rb") as f:
@@ -106,7 +105,7 @@ class Watcher(object):
             suff = '.pkl.bak'
         else:
             suff = '.pkl'
-            
+
         for i, fname in enumerate(self.filenames):
             with open(os.path.join(self.store_dir, fname + suff), 'rb') as f:
                 self.proc_data[i] = pickle.load(f)
@@ -137,7 +136,6 @@ class Watcher(object):
                 lambda x, y: x and y,
                 [os.path.exists(os.path.join(
                     self.store_dir, f + '.pkl.bak')) for f in self.filenames])
-
             if bak_exist:
                 # restore operation
                 print("DB Corrupt but found backup files")
@@ -152,12 +150,10 @@ class Watcher(object):
                     p = os.path.join(self.store_dir, fname)
                     if os.path.exists(p + '.pkl.bak'):
                         os.remove(p + '.pkl.bak')
-                    
                 # Simply rebuild index for now
                 print("Some files are missing!\n")
                 print("And the backups are also not there! First run?")
                 print("Building initial index")
-
                 self.proc_data = self.__build_indices(self.watch_dir)
                 # __write_files automatically backs up the files, but on a first run
                 # there would be no files to backup, so write the bare code here
@@ -169,7 +165,6 @@ class Watcher(object):
             print("Previous saves exist!")
             self.__read_files()
             return True
-
 
     # Get initial data and then watch for changes
     # Readability is hampered by self.first_run as its usage
@@ -191,11 +186,11 @@ class Watcher(object):
             old_pdfs = set(self.proc_data[0].keys())
             old_hashes = set(self.proc_data[1].keys())
 
-        # What if hash changes but file does not? Check modified stamp
-        # Only while writing something the pickles are backed up
-        # Even if files are moved within the same directory tree
-        # this should be updated as the paths are changed even though
-        # the basenames aren't changed. Though must actually make it work.
+        # NOTE: What if hash changes but file does not? Check modified stamp
+        #       Only while writing something the pickles are backed up Even if
+        #       files are moved within the same directory tree this should be
+        #       updated as the paths are changed even though the basenames
+        #       aren't changed. Though must actually make it work.
         if not self.first_run:
             # new files added
             if new_pdfs - old_pdfs:

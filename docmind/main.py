@@ -1,10 +1,9 @@
 import os
 import sys
 import argparse
-import configparser
 from pathlib import Path
 
-from watcher.watcher import Watcher
+from .watcher import Watcher
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGraphicsView, QApplication, QGraphicsScene, QStatusBar, QGridLayout
@@ -12,7 +11,8 @@ from GraphicsView import GraphicsView
 
 from PyQt5.QtOpenGL import QGL, QGLWidget, QGLFormat
 
-from MMap import MMap, MyLineEdit, StatusBar
+from .mmap import MMap, MyLineEdit, StatusBar
+
 
 # Each map can be linked to a scene
 class MindMap(QGraphicsScene):
@@ -26,16 +26,13 @@ class MindMap(QGraphicsScene):
         self.create_new_map()
         self.monitor()
         self.hashes = {}
-        
+
     def monitor(self):
         pdfs, added = self.watcher.check()
         if added:
             self.files_hashes = self.watcher.proc_data[0]  # file -> (hash, metadata)
             self.hashes_files = self.watcher.proc_data[1]  # hash -> (file, metadata)
-
         new_hashes = set(self.hashes_files.keys())
-        
-        
 
     def exit_app(self):
         # check if saving
@@ -119,7 +116,7 @@ if __name__ == "__main__":
     status_bar = QStatusBar(grview)
     mm.mmap.init_widgets(line_edit, status_bar)
     # grview.horizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-    # grview.verticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)    
+    # grview.verticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
     # mm.setSceneRect(0, 0, 1200, 800)
     mm.stickyFocus = True
     grview.fitInView(mm.sceneRect(), Qt.KeepAspectRatio)

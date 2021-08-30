@@ -4,14 +4,16 @@ import threading
 import sys
 
 import PIL
-
 from PyQt5.QtCore import (qAbs, QLineF, QPointF, qrand, QRectF, QSizeF, qsrand,
                           Qt, QTime)
-from PyQt5.QtGui import (QBrush, QPainterPath, QPainter, QColor, QPen, QFont, QTextCursor,
-                         QPixmap, QRadialGradient, QMouseEvent, QKeyEvent, QFontMetricsF, QTextDocument)
-from PyQt5.QtWidgets import (QGraphicsEllipseItem, QGraphicsRectItem,QGraphicsScene, QGraphicsItemGroup,
-                             QGraphicsItem, QGraphicsTextItem, QGraphicsSimpleTextItem, QGraphicsPixmapItem, QGraphicsDropShadowEffect)
-
+from PyQt5.QtGui import (QBrush, QPainterPath, QPainter, QColor, QPen, QFont,
+                         QTextCursor, QPixmap, QRadialGradient, QMouseEvent,
+                         QKeyEvent, QFontMetricsF, QTextDocument)
+from PyQt5.QtWidgets import (QGraphicsEllipseItem,
+                             QGraphicsRectItem,QGraphicsScene,
+                             QGraphicsItemGroup, QGraphicsItem,
+                             QGraphicsTextItem, QGraphicsSimpleTextItem,
+                             QGraphicsPixmapItem, QGraphicsDropShadowEffect)
 from Shape import Ellipse, Rectangle, RoundedRectangle, Circle, Shapes
 
 # So, I've mostly separated the two parts, i.e., the textobject stuff
@@ -39,7 +41,7 @@ class Thought(QGraphicsTextItem):
 
     # def setBrush(self, brush):
     #     self.shape_item.setBrush(brush)
-        
+
     # def pos(self):
         # rect_ = super(Thought, self).boundingRect().getRect()
         # return (super().pos().x() - rect_[2], rect_[0])
@@ -96,13 +98,13 @@ class Thought(QGraphicsTextItem):
         # cursor.select(cursor.Document)
         # cursor.movePosition(cursor.End)
         # print(cursor.selection().toPlainText())
-        
+
     # I'll fix this later
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.set_editable(True)
             event.accept()
-            
+
     def paint(self, painter, style, widget):
         self.shape_item.prepareGeometryChange()
         # painter.drawRect(self.boundingRect())
@@ -164,7 +166,7 @@ class Thought(QGraphicsTextItem):
             self.icon.setCursor(Qt.PointingHandCursor)
         else:
             self.icon.setCursor(Qt.ArrowCursor)
-            
+
     def pdf_icon(self):
         if self.pdf:
             return self._color_file
@@ -212,7 +214,7 @@ class Thought(QGraphicsTextItem):
         #      (rect[0] + rect[2], rect[1]+rect[3]/2), (rect[0] + rect[2]/2, rect[1] + rect[3])))
         # self.nearest_child = {'pos': {'horizontal': None, 'vertical': None},
         # 'neg': {'horizontal': None, 'vertical': None}}
-       
+
     def serialize(self):
         data = {}
         data['index'] = self.index
@@ -242,7 +244,7 @@ class Thought(QGraphicsTextItem):
         data['family'] = family_dict
 
         return data
-  
+
     def set_properties(self, index, shape, coords, data, pdf, text):
         if shape not in Shapes.values():
             print("Invalid Shape")
@@ -257,7 +259,7 @@ class Thought(QGraphicsTextItem):
             self.index = data['index']
         else:
             self.index = index
-            
+
         # siblings aren't needed to be added, as they're in self.family[direction]
         # They are restored automatically from data{}
         self.family = {'u': {}, 'd': {}, 'l': {}, 'r': {},
@@ -275,7 +277,7 @@ class Thought(QGraphicsTextItem):
             self.shape_coords = data['shape_coords']
         else:
             self.shape_coords = None
-            
+
         if 'text' in data:
             self.text = data['text']
             self.setPlainText(self.text)
@@ -293,7 +295,7 @@ class Thought(QGraphicsTextItem):
             font.setFamily(self.font_attribs['family'])
             font.setPointSize(self.font_attribs['point_size'])
             self.setFont(font)
-            
+
         if 'pdf' in data:
             pdf = data['pdf']
             self.pdf = pdf.replace('file://', '', 1) if pdf.startswith('file://') else pdf
@@ -305,7 +307,7 @@ class Thought(QGraphicsTextItem):
         else:
             self.hidden = False
         self.old_hidden = self.hidden
-        
+
         if 'hash' in data:
             self.hash = data['hash']
         else:

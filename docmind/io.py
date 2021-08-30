@@ -14,5 +14,6 @@ def load_file(filename):
         t = file.read()
         file.close()
         return json.loads(t)
-    except:
+    except Exception as e:
+        print(f"Error occured {e}")
         return {}

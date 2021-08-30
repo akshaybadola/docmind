@@ -1,9 +1,6 @@
 import os
-import math
-import threading
-import sys
 import operator
-from functools import reduce, singledispatch, partial
+from functools import reduce, singledispatch
 
 from PyQt5.QtCore import Qt, QRectF, QPointF
 from PyQt5.QtGui import QBrush, QPainterPath, QPainter, QColor, QPen, QPixmap, QRadialGradient
@@ -12,15 +9,15 @@ from PyQt5.QtWidgets import (QGraphicsEllipseItem, QApplication, QGraphicsView, 
                              QStatusBar, QGraphicsDropShadowEffect)
 from PyQt5.QtOpenGL import QGL, QGLWidget, QGLFormat
 
-from Thought import Thought
-from Link import Arrow, Link
-from Shape import Shape, Shapes
-from LoadSave import load_file, save_file
+from .thought import Thought
+from .link import Arrow, Link
+from .shape import Shape, Shapes
+from .io import load_file, save_file
 
 # Priorities:
-# CRASH: if I delete some children while in cycle_ and then try to move in opposite movement direction
+# BUG: if I delete some children while in cycle_ and then try to move in opposite movement direction
 #              FIXED with adjusting self.cycle_items
-# CRASH: After partial expand, navigation to child nodes to children and again trying to do partial expand
+# BUG: After partial expand, navigation to child nodes to children and again trying to do partial expand
 #              in orthogonal direction causes a crash
 #              FIXED with the adjustment to hide_thoughts where if expand_leaves is false, then the node's
 #              directional expand flag is set to false if all children are leaves
@@ -53,7 +50,7 @@ from LoadSave import load_file, save_file
 #     - Alignment is also incorrect for new children if the width of the window is too long
 #       Must adjust.
 # 4. If a node has too many files, then perhaps show only a few but scroll through all
-#     maybe ability to search through them also selectively 
+#     maybe ability to search through them also selectively
 
 
 # 1. Add a "star" to a file, perhaps of different colors (importance or groupings)
@@ -103,6 +100,7 @@ class StatusBar(QStatusBar):
     # for keybindings and stuff
     pass
 
+
 class MyLineEdit(QLineEdit):
     def __init__(self, *args):
         super(MyLineEdit, self).__init__(*args)
@@ -118,7 +116,7 @@ class MyLineEdit(QLineEdit):
                 self.text_dict[k] = v.text.lower()
             else:
                 self.text_dict[k] = ''
-                
+
     def highlight(self):
         text = self.text()
         twt = []
@@ -144,6 +142,7 @@ class MyLineEdit(QLineEdit):
             self.highlight()
             event.accept()
 
+
 class MMap(object):
     def __init__(self, scene, filename=None, dirtree=None):
         self.scene = scene
@@ -153,14 +152,23 @@ class MMap(object):
         self.default_insert = 'u'
         self.typing = False
 
-        self.dir_map = {'pos': {'horizontal': 'r', 'vertical': 'd'}, 'neg': {'horizontal': 'l', 'vertical': 'u'},
-                        'l': ('neg', 'horizontal'), 'r': ('pos', 'horizontal'), 'u': ('neg', 'vertical'), 'd': ('pos', 'vertical'),
-                        'horizontal': ('l', 'r'), 'vertical': ('u', 'd')}
-        self.inverse_map = {'l': 'r', 'r': 'l', 'u': 'd', 'd': 'u', 'horizontal': ('u', 'd'), 'vertical': ('l', 'r')}
+        self.dir_map = {'pos': {'horizontal': 'r', 'vertical': 'd'},
+                        'neg': {'horizontal': 'l', 'vertical': 'u'},
+                        'l': ('neg', 'horizontal'),
+                        'r': ('pos', 'horizontal'),
+                        'u': ('neg', 'vertical'),
+                        'd': ('pos', 'vertical'),
+                        'horizontal': ('l', 'r'),
+                        'vertical': ('u', 'd')}
+        self.inverse_map = {'l': 'r', 'r': 'l', 'u': 'd', 'd': 'u',
+                            'horizontal': ('u', 'd'), 'vertical': ('l', 'r')}
         self.inverse_orientmap = {'horizontal': 'vertical', 'vertical': 'horizontal',
                                   'l': 'vertical', 'r': 'vertical', 'u': 'horizontal', 'd': 'horizontal'}
         self.orient_map = {'l': 'horizontal', 'u': 'vertical', 'r': 'horizontal', 'd': 'vertical'}
-        self.other_dirmap = {'l': {'u', 'd', 'r'}, 'r': {'u', 'd', 'l'}, 'u': {'l', 'd', 'r'}, 'd': {'u', 'l', 'r'}}
+        self.other_dirmap = {'l': {'u', 'd', 'r'},
+                             'r': {'u', 'd', 'l'},
+                             'u': {'l', 'd', 'r'},
+                             'd': {'u', 'l', 'r'}}
         self.op_map = {'l': (-200, 0), 'r': (200, 0), 'u': (0, -200), 'd': (0, 200)}
         self.movement = None
         self.cycle_index = 0
@@ -266,7 +274,6 @@ class MMap(object):
         ind = thought.index
         if self.cycle_items:
             self.cycle_items.remove(ind)
-
         for i in thought.family['children']:
             self.thoughts[i].family['parent'] = None
             for c in ['u', 'd', 'l', 'r']:
@@ -274,7 +281,6 @@ class MMap(object):
                     self.thoughts[i].family[c].pop('siblings')
                 if 'parent' in self.thoughts[i].family[c]:
                     self.thoughts[i].family[c].pop('parent')
-
         par = thought.family['parent']
         if par:
             par = self.thoughts[par]
@@ -292,7 +298,6 @@ class MMap(object):
                             child.family[c]['siblings'].remove(ind)
                 self.fix_family(child)
             self.fix_family(par)
-                
         thought.remove()
         self.thoughts.pop(ind)
         links_to_remove = [l for l in self.links.keys() if ind in l]
@@ -306,12 +311,12 @@ class MMap(object):
         self.links[(t1_ind, t2_ind)] = Link(self.thoughts[t1_ind], self.thoughts[t2_ind], self.thoughts[t1_ind].color, scene=self.scene, direction=direction)
         self.scene.addItem(self.links[(t1_ind, t2_ind)])
         self.scene.update()
-        
+
     def update_pos(self):
         for thought in self.thoughts.values():
             thought.coords = thought.mapToScene(thought.pos())
             thought.shape_coords = (thought.shape_item.pos().x(), thought.shape_item.pos().y())
-            
+
     def dist_pos(self, pos1, pos2):
         return (pos1.x() - pos2.x()) ** 2 + (pos1.y() - pos2.y()) ** 2
 
@@ -326,7 +331,7 @@ class MMap(object):
     # perhaps not needed
     def select(self, ind):
         self.thoughts[ind].shape_item.setSelected(True)
-    
+
     def select_descendants(self, thoughts):
         recurse_ = []
         for t in thoughts:
@@ -341,7 +346,7 @@ class MMap(object):
             self.select_descendants(recurse_)
         else:
             return
-        
+
     def select_all(self):
         selected = self.scene.selectedItems()
         if not selected:
@@ -354,8 +359,7 @@ class MMap(object):
                     if 'siblings' in thought.family[c]:
                         for s in thought.family[c]['siblings']:
                             self.select(s)
-                        
-            
+
     # links also?
     def unselect_all(self):
         self.scene.clearSelection()
@@ -437,7 +441,7 @@ class MMap(object):
                 return (x[0] - y.x()) ** 2 + (x[1] - y.y()) ** 2
             elif isinstance(y, tuple):
                 return (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2
-            
+
     # @singledispatch
     # def coo_x(self, t):
     #     return t.pos().x()
@@ -601,9 +605,9 @@ class MMap(object):
                 child_axis = 'neg'
             else:
                 child_axis = 'pos'
-            
-            lco = self.last_child_ordinate(children, 'horizontal' if orientation == 'vertical' else 'vertical', child_axis)
-
+            lco = self.last_child_ordinate(children, 'horizontal'
+                                           if orientation == 'vertical'
+                                           else 'vertical', child_axis)
             if direction == 'l':
                 if child_axis == 'neg':
                     pos = QPointF(x - displacement, lco - buffer)
@@ -639,18 +643,14 @@ class MMap(object):
                 else:  # d
                     pos = QPointF(x, y + displacement + shape_item.boundingRect().getRect()[3])
         return pos
-        
 
     def add_new_child(self, parent, data={}, shape=Shapes['rectangle'], direction=None):
         if isinstance(parent, Shape):
             parent = parent.text_item
-
         if not direction:
             direction = parent.insert_dir
         axis, orientation = self.dir_map[direction]
-        
         pos = self.place_child(parent, direction)
-
         data.update({'side': direction})
         self.add_thought(pos, text="child thought", shape=shape, data=data)
         if 'children' in parent.family[direction]:         # update parent direction
@@ -658,7 +658,6 @@ class MMap(object):
         else:
             parent.family[direction].update({'children': {self.cur_index}})
         parent.family['children'].add(self.cur_index)        # update parent's children
-
         c_t = self.thoughts[self.cur_index]
         idir = self.inverse_map[direction]
         # iorient = self.inverse_map[orientation]
@@ -744,7 +743,7 @@ class MMap(object):
                 self.update_parent(self.dragging_items, self.target_item)
                 self.target_item = None
                 self.scene.update()
-                    
+
     def attach_dir(self, target, c_inds):
         if isinstance(target, Thought):
             coords = target.shape_item.get_link_coords()
@@ -755,8 +754,10 @@ class MMap(object):
 
         def xx(x):
             return x.mapToScene(x.boundingRect().center()).x()
+
         def xy(x):
             return x.mapToScene(x.boundingRect().center()).y()
+
         x_ = sum([xx(self.thoughts[ind]) for ind in c_inds])/len(c_inds)
         y_ = sum([xy(self.thoughts[ind]) for ind in c_inds])/len(c_inds)
         return ['l', 'u', 'r', 'd'][
@@ -840,7 +841,7 @@ class MMap(object):
             self.fix_place_children(self.thoughts[ind])
             self.add_link(target.index, t.index, direction)
             self.update_siblings(target, t, direction)
-            
+
     def update_siblings(self, par, child, direction):
         iorient = self.inverse_map[self.orient_map[direction]]
         # avoid adding self to siblings, although in most other cases self is sibling
@@ -899,7 +900,7 @@ class MMap(object):
                     self.replace_children(self.thoughts[c_ind], idir, direction)
             par.family[idir].pop('children')
             self.fix_family(par)
-            
+
     def last_child_ordinate(self, t_inds, orientation, axis):
         if orientation == 'horizontal':
             coo = self.coo_x
@@ -923,13 +924,12 @@ class MMap(object):
     #     retval = max(y_axis, key=lambda x: x[1])
     #     return retval[1] + self.thoughts[retval[0]].shape_item.boundingRect().getRect()[3]
 
-
     # def rightmost(self, t_inds):
     #     x_axis = [(t_ind, self.coo_x(t_ind))
     #               for t_ind in t_inds]
     #     retval = max(x_axis, key=lambda x: x[1])
     #     return retval[1] + self.thoughts[retval[0]].shape_item.boundingRect().getRect()[2]
-    
+
     def select_one(self, t_ind):
         if isinstance(t_ind, set):
             t = self.thoughts[list(t_ind)[0]]
@@ -1014,7 +1014,7 @@ class MMap(object):
             self.arrows.append(arrow)
             self.scene.addItem(arrow)
             item.insert_dir = direction  # for now
-        
+
     # This function is not used
     def remove_arrows(self):
         if self.arrows:
@@ -1127,7 +1127,7 @@ class MMap(object):
         elif not toggle and self.cycle_items:
             self.cycle_index = 0
             self.cycle_items = []
-            
+
 
     def toggle_search_cycle(self, t_inds=None, toggle=True):
         if toggle:
@@ -1136,7 +1136,7 @@ class MMap(object):
             self.select_one(self.cycle_items[self.cycle_index])
         else:
             self.cycle_items = []
-    
+
     def search_cycle(self, key):
         if key == Qt.Key_N:
             self.cycle_index = (self.cycle_index + 1) % len(self.cycle_items)
@@ -1191,7 +1191,7 @@ class MMap(object):
     #             if t.expand == 'd':
     #                 for c in ['u', 'd', 'l', 'r']:
     #                     t.part_expand[c] = 'd'
-                
+
     # currently only expands a single node
     def partial_expand(self, event):
         selected = self.get_selected()
@@ -1263,7 +1263,7 @@ class MMap(object):
                 for k in self.links.keys():
                     if ind in k:
                         self.links[k].setVisible(not self.thoughts[ind].hidden)
-            
+
     # for descendants one level deep
     def hide_children(self, thought, expansion, direction):
         if 'children' in thought.family[direction]:
@@ -1274,7 +1274,7 @@ class MMap(object):
                 self.links[thought.index, child.index].setVisible(True if expansion == 'e' else False)
             # self.fix_expansion(children, 'part')
             self.hide_thoughts(children, expansion, True, False)
-                
+
 
     def hide_thoughts(self, thoughts, expansion=None, recurse=False, expand_leaves=True):
         thoughts = [t if isinstance(t, Thought) else t.text_item for t in thoughts]
